@@ -1,12 +1,17 @@
 # These was super useful:
 # https://medium.com/@naveenkumarspa/using-python-for-your-desktop-wallpaper-collection-focused-on-beginners-a66451d25660
 # https://www.daniweb.com/programming/software-development/code/493004/display-an-image-from-the-web-pygame
+# https://stackoverflow.com/questions/47316266/can-i-display-image-in-full-screen-mode-with-pil
 import sys
 import io
-import pygame as pg
+# import pygame as pg
 import requests
-from fake_useragent import UserAgent
 import time
+from PIL.Image import Image
+from PIL import Image, ImageTk
+from fake_useragent import UserAgent
+from io import BytesIO
+
 
 try:
     # Python2
@@ -24,7 +29,7 @@ else:
 root = tkinter.Tk()
 screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
 
-pg.init()
+# pg.init()
 ua = UserAgent(
     fallback='Mozilla/5.0 (X11; CrOS i686 2268.111.0) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11')
 url = 'https://www.reddit.com/r/aww.json?limit=100'
@@ -35,48 +40,57 @@ if not response.ok:
     exit()
 data = response.json()['data']['children']
 
-def show_image(image_url):
-    image_str = urlopen(image_url).read()
-    # create a file object (stream)
-    image_file = io.BytesIO(image_str)
-    print(image_file)
-    # (r, g, b) color tuple, values 0 to 255
-    black = (0, 0, 0)
-    # create a 600x400 black screen
-    screen = pg.display.set_mode((screen_width, screen_height), pg.RESIZABLE)
-    screen.fill(black)
-    # load the image from a file or stream
-    image = pg.image.load(image_file)
-    size = image.get_size()
-    # print(image.get_width + " " + image.get_height)
-    # image = pg.transform(image, (screen_width, screen_height))
-    # draw image, position the image ulc at x=20, y=20
-    screen.blit(image, (0, 0))
+def show_image(image):
+    print("hello from show_image")
 
-    screen.blit(((0.5 * screen_width) - (0.5 * size[0]), (0.5 * screen_height) - (0.5 * size[1])))
-    # nothing gets displayed until one updates the screen
-    pg.display.flip()
+    pilImage = Image.open(BytesIO(image.content))
+    # pilImage.show()
+    showPIL(pilImage)
     time.sleep(1)
+
+def showPIL(pilImage):
+    root = tkinter.Tk()
+    w, h = root.winfo_screenwidth(), root.winfo_screenheight()
+    root.overrideredirect(1)
+    root.geometry("%dx%d+0+0" % (w, h))
+    root.focus_set()
+    root.bind("<Escape>", lambda e: (e.widget.withdraw(), e.widget.quit()))
+    canvas = tkinter.Canvas(root,width=w,height=h)
+    canvas.pack()
+    canvas.configure(background='black')
+    imgWidth, imgHeight = pilImage.size
+    if imgWidth > w or imgHeight > h:
+        ratio = min(w/imgWidth, h/imgHeight)
+        imgWidth = int(imgWidth*ratio)
+        imgHeight = int(imgHeight*ratio)
+        pilImage = pilImage.resize((imgWidth,imgHeight), Image.ANTIALIAS)
+    image = ImageTk.PhotoImage(pilImage)
+    imagesprite = canvas.create_image(w/2,h/2,image=image)
+    root.mainloop()
+
 
 
 for i in range(len(data)):
     current_post = data[i]['data']
     image_url = current_post['url']
-    # if '.png' in image_url:
-    #     extension = '.png'
-    # elif '.jpg' in image_url or '.jpeg' in image_url:
-    #     extension = '.jpeg'
-    # elif 'imgur' in image_url:
-    #     image_url += '.jpeg'
-    #     extension = '.jpeg'
-    # else:
-    #     continue
+    if '.png' in image_url:
+        extension = '.png'
+    elif '.jpg' in image_url or '.jpeg' in image_url:
+        extension = '.jpeg'
+    elif 'imgur' in image_url:
+        image_url += '.jpeg'
+        extension = '.jpeg'
+    else:
+        continue
     image = requests.get(image_url, allow_redirects=False)
+    print("hello from loop: " + str(i) + str(image.status_code))
     if (image.status_code == 200):
         try:
+            print("trying to show image")
             # output_filehandle = open(current_post['title'] + extension, mode='bx')
             # output_filehandle.write(image.content)
-            show_image(image_url)
+            show_image(image)
+
         except:
             pass
 
