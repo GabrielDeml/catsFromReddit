@@ -36,14 +36,8 @@ ua = UserAgent(
 
 # Reddit url to get images and how many to get
 # Change limit if you want more
-url = 'https://www.reddit.com/r/cats.json?limit=10000'
-response = requests.get(url, headers={'User-agent': ua.random})
+url = ['https://www.reddit.com/r/cats.json?limit=10000', 'https://www.reddit.com/r/aww.json?limit=10000']
 
-# Make sure we got a good response
-if not response.ok:
-    print("Error", response.status_code)
-    exit()
-data = response.json()['data']['children']
 
 
 def show_image(inputImage):
@@ -77,12 +71,20 @@ def findsize(size):
 
 # Forever get the images
 while True:
-    for i in range(len(data)):
-        current_post = data[i]['data']
-        image_url = current_post['url']
-        image = requests.get(image_url, allow_redirects=False)
-        if image.status_code == 200:
-            try:
-                show_image(image.content)
-            except:
-                pass
+    for n in range(len(url)):
+        response = requests.get(url[n], headers={'User-agent': ua.random})
+
+        # Make sure we got a good response
+        if not response.ok:
+            print("Error", response.status_code)
+            exit()
+        data = response.json()['data']['children']
+        for i in range(len(data)):
+            current_post = data[i]['data']
+            image_url = current_post['url']
+            image = requests.get(image_url, allow_redirects=False)
+            if image.status_code == 200:
+                try:
+                    show_image(image.content)
+                except:
+                    pass
