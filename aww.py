@@ -47,10 +47,13 @@ def show_image(image_url):
     screen.fill(black)
     # load the image from a file or stream
     image = pg.image.load(image_file)
-    rect = image.get_rect()
+    size = image.get_size()
+    # print(image.get_width + " " + image.get_height)
     # image = pg.transform(image, (screen_width, screen_height))
     # draw image, position the image ulc at x=20, y=20
     screen.blit(image, (0, 0))
+
+    screen.blit(((0.5 * screen_width) - (0.5 * size[0]), (0.5 * screen_height) - (0.5 * size[1])))
     # nothing gets displayed until one updates the screen
     pg.display.flip()
     time.sleep(1)
